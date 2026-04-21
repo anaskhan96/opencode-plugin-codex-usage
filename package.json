@@ -3,6 +3,26 @@
   "version": "0.1.0",
   "license": "MIT",
   "description": "OpenCode TUI plugin that shows live Codex usage limits in the session sidebar.",
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "plugin",
+    "codex",
+    "usage",
+    "quota",
+    "rate-limit",
+    "tui",
+    "sidebar",
+    "openai"
+  ],
+  "homepage": "https://github.com/anaskhan96/opencode-plugin-codex-usage#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anaskhan96/opencode-plugin-codex-usage.git"
+  },
+  "bugs": {
+    "url": "https://github.com/anaskhan96/opencode-plugin-codex-usage/issues"
+  },
   "type": "module",
   "exports": {
     ".": {
