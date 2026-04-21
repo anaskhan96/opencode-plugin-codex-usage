@@ -4,50 +4,26 @@ OpenCode TUI plugin that shows live Codex usage limits in the right sidebar.
 
 It reads Codex quota data from `codex app-server` using the same `account/rateLimits/read` RPC that Codex uses for rich clients, then renders the returned buckets inside OpenCode's `sidebar_content` slot.
 
+<p>
+  <img src="docs/dark.png" alt="Example output (dark)" width="420" />
+  <img src="docs/light.png" alt="Example output (light)" width="420" />
+</p>
+
 ## What it shows
 
 - The main Codex usage bucket.
 - Extra model-specific buckets when Codex exposes them, for example `GPT-5.3-Codex-Spark`.
 - The current remaining percentage and reset time for each available window.
 
-## Install From Source
+## Installation
 
-Clone or keep this folder next to the project where you run OpenCode, then install the plugin dependencies:
-
-```bash
-cd opencode-plugin-codex-usage
-npm install
-```
-
-Add the plugin to your workspace-local OpenCode TUI config at `.opencode/tui.json`:
-
-```json
-{
-  "$schema": "https://opencode.ai/tui.json",
-  "plugin": [["../opencode-plugin-codex-usage", { "refreshMs": 30000 }]]
-}
-```
-
-The relative path above assumes this layout:
-
-```text
-your-project/
-  .opencode/
-    tui.json
-../opencode-plugin-codex-usage/
-```
-
-Restart OpenCode after updating the config.
-
-## Install As A Regular OpenCode Plugin
-
-Once this package is published to npm, install it the same way as any other OpenCode plugin:
+Install it like any other OpenCode plugin:
 
 ```bash
 opencode plugin opencode-plugin-codex-usage
 ```
 
-Or add it directly in `tui.json`:
+If you want to configure it in your workspace-local TUI config, add this to `.opencode/tui.json`:
 
 ```json
 {
@@ -56,13 +32,35 @@ Or add it directly in `tui.json`:
 }
 ```
 
+Restart OpenCode after updating the config.
+
+## Manual Installation
+
+For a local checkout, install dependencies in this repository:
+
+```bash
+cd opencode-plugin-codex-usage
+bun install
+```
+
+Then point `.opencode/tui.json` at the local source:
+
+```json
+{
+  "$schema": "https://opencode.ai/tui.json",
+  "plugin": [["file:///absolute/path/to/opencode-plugin-codex-usage", { "refreshMs": 30000 }]]
+}
+```
+
+Restart OpenCode after updating the config.
+
 ## Configuration
 
 The plugin accepts these options in `tui.json`:
 
 ```json
 {
-  "plugin": [["../opencode-plugin-codex-usage", {
+  "plugin": [["file:///absolute/path/to/opencode-plugin-codex-usage", {
     "refreshMs": 30000,
     "codexBinary": "codex"
   }]]
