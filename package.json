@@ -1,0 +1,28 @@
+{
+  "name": "opencode-plugin-codex-usage",
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "OpenCode TUI plugin that shows live Codex usage limits in the session sidebar.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./tui.tsx"
+    },
+    "./tui": {
+      "import": "./tui.tsx"
+    }
+  },
+  "files": [
+    "README.md",
+    "package.json",
+    "tui.tsx"
+  ],
+  "scripts": {
+    "check": "bun -e \"import('@opentui/solid/runtime-plugin-support').then(() => import('./tui.tsx')).then(() => console.log('plugin import ok'))\""
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "latest",
+    "@opentui/solid": "^0.1.101",
+    "solid-js": "^1.9.10"
+  }
+}
