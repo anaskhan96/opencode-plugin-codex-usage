@@ -52,9 +52,10 @@ Open a Codex-backed session and look for `Codex Usage` in the right sidebar.
 
 Use this only if you want to run a local checkout of the plugin, for example while testing unreleased changes.
 
-Install dependencies in this repository:
+Clone the repository and install dependencies:
 
 ```bash
+git clone https://github.com/anaskhan96/opencode-plugin-codex-usage.git
 cd opencode-plugin-codex-usage
 bun install
 ```
