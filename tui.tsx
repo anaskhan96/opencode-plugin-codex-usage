@@ -55,7 +55,6 @@ type RateLimitState =
     }
 
 const id = "opencode-plugin-codex-usage"
-const BAR_WIDTH = 20
 const MIN_REFRESH_MS = 15000
 const DEFAULT_REFRESH_MS = 30000
 
@@ -88,28 +87,31 @@ function percentLeft(window: RateLimitWindow | null | undefined) {
   return Math.max(0, Math.min(100, Math.round(100 - used)))
 }
 
-function progressBar(remaining: number) {
-  const filled = Math.max(0, Math.min(BAR_WIDTH, Math.round((remaining / 100) * BAR_WIDTH)))
-  return `[${"#".repeat(filled)}${"-".repeat(BAR_WIDTH - filled)}]`
+function remainingColor(remaining: number, theme: TuiThemeCurrent) {
+  if (remaining < 15) return theme.error
+  if (remaining < 50) return theme.warning
+  return theme.success
 }
 
 function resetLabel(timestamp: number | null | undefined) {
-  if (!timestamp) return "reset time unavailable"
+  if (!timestamp) return "reset unavailable"
 
   const date = new Date(timestamp * 1000)
-  if (Number.isNaN(date.getTime())) return "reset time unavailable"
+  if (Number.isNaN(date.getTime())) return "reset unavailable"
 
   const time = new Intl.DateTimeFormat(undefined, {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
   }).format(date)
-  const day = new Intl.DateTimeFormat(undefined, {
-    day: "numeric",
-    month: "short",
-  }).format(date)
+  const day = new Intl.DateTimeFormat(undefined, { day: "numeric" }).format(date)
+  const month = new Intl.DateTimeFormat(undefined, { month: "short" }).format(date)
 
-  return `resets ${time} on ${day}`
+  return `${time} ${day} ${month}`
+}
+
+function rowLabel(window: RateLimitWindow | null | undefined, fallback: string) {
+  return `${durationLabel(window, fallback)}:`
 }
 
 function titleCase(part: string) {
@@ -132,6 +134,20 @@ function snapshotName(snapshot: RateLimitSnapshot) {
 function snapshotOrder(snapshot: RateLimitSnapshot) {
   if ((snapshot.limitId || "codex").toLowerCase() === "codex") return ""
   return snapshotName(snapshot).toLowerCase()
+}
+
+function sessionUsesCodex(api: Parameters<TuiPlugin>[0], sessionID: string) {
+  const messages = api.state.session.messages(sessionID)
+
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index]
+    const providerID = ("providerID" in message ? message.providerID : message.model.providerID).toLowerCase()
+
+    if (providerID.includes("openai") || providerID.includes("codex")) return true
+    return false
+  }
+
+  return false
 }
 
 function normalizeSnapshots(result: RateLimitResponse) {
@@ -243,38 +259,36 @@ function SnapshotView(props: {
       props.snapshot.primary
         ? {
             key: "primary",
-            label: `${durationLabel(props.snapshot.primary, "5h")} limit`,
+            label: rowLabel(props.snapshot.primary, "5h"),
             window: props.snapshot.primary,
           }
         : undefined,
       props.snapshot.secondary
         ? {
             key: "secondary",
-            label: `${durationLabel(props.snapshot.secondary, "Weekly")} limit`,
+            label: rowLabel(props.snapshot.secondary, "Weekly"),
             window: props.snapshot.secondary,
           }
         : undefined,
     ].filter((item): item is { key: string; label: string; window: RateLimitWindow } => !!item)
 
   const isPrimaryBucket = () => (props.snapshot.limitId || "codex").toLowerCase() === "codex"
+  const heading = () => (isPrimaryBucket() ? "Overall limit left" : `${snapshotName(props.snapshot)} limit left`)
 
   return (
-    <box flexDirection="column" gap={1}>
-      <Show when={!isPrimaryBucket()}>
-        <text fg={props.theme().text}>
-          <b>{snapshotName(props.snapshot)}</b>
-        </text>
-      </Show>
+    <box flexDirection="column" gap={0} marginTop={isPrimaryBucket() ? 0 : 1}>
+      <text fg={props.theme().textMuted}>{heading()}:</text>
       <For each={rows()}>
         {(row) => {
           const remaining = percentLeft(row.window)
+          const color = remainingColor(remaining, props.theme())
           return (
-            <box flexDirection="column">
-              <text fg={props.theme().textMuted}>{row.label}</text>
-              <text fg={props.theme().text}>
-                {progressBar(remaining)} {remaining}% left
-              </text>
-              <text fg={props.theme().textMuted}>{resetLabel(row.window.resetsAt)}</text>
+            <box flexDirection="column" gap={0}>
+              <box flexDirection="row" gap={0}>
+                <text fg={props.theme().textMuted}>{row.label}</text>
+                <text fg={color}> {remaining}%</text>
+                <text fg={props.theme().textMuted}> (resets {resetLabel(row.window.resetsAt)})</text>
+              </box>
             </box>
           )
         }}
@@ -285,9 +299,11 @@ function SnapshotView(props: {
 
 function View(props: { api: Parameters<TuiPlugin>[0]; options: PluginOptions | undefined; sessionID: string }) {
   const [state, setState] = createSignal<RateLimitState>({ status: "loading" })
+  const [collapsed, setCollapsed] = createSignal(!sessionUsesCodex(props.api, props.sessionID))
   const theme = () => props.api.theme.current
   const codexBinary = props.options?.codexBinary || "codex"
   const refreshMs = getRefreshMs(props.options)
+  const toggleCollapsed = () => setCollapsed((value) => !value)
 
   let disposed = false
   let running = false
@@ -323,6 +339,7 @@ function View(props: { api: Parameters<TuiPlugin>[0]; options: PluginOptions | u
 
   createEffect(() => {
     props.sessionID
+    setCollapsed(!sessionUsesCodex(props.api, props.sessionID))
     void refresh()
   })
 
@@ -342,26 +359,39 @@ function View(props: { api: Parameters<TuiPlugin>[0]; options: PluginOptions | u
   const snapshots = () => state().data?.snapshots || []
 
   return (
-    <box flexDirection="column" gap={1}>
-      <text fg={theme().text}>
-        <b>Usage Limits</b>
-      </text>
-      <Switch>
-        <Match when={state().status === "error" && !state().data}>
-          <text fg={theme().warning}>{state().message}</text>
-        </Match>
-        <Match when={state().status === "loading" && !state().data}>
-          <text fg={theme().textMuted}>Loading Codex usage...</text>
-        </Match>
-        <Match when={snapshots().length === 0}>
-          <text fg={theme().textMuted}>No Codex usage data available.</text>
-        </Match>
-        <Match when={snapshots().length > 0}>
-          <For each={snapshots()}>{(snapshot) => <SnapshotView snapshot={snapshot} theme={theme} />}</For>
-        </Match>
-      </Switch>
-      <Show when={state().status === "error" && state().data}>
-        <text fg={theme().warning}>refresh failed: {state().message}</text>
+    <box flexDirection="column" gap={0}>
+      <box
+        focusable
+        onMouseDown={toggleCollapsed}
+        onKeyDown={(event) => {
+          if (event.name === "return" || event.name === "space") {
+            event.preventDefault()
+            toggleCollapsed()
+          }
+        }}
+      >
+        <text fg={theme().text}>
+          <b>{collapsed() ? "▶" : "▼"} Codex Usage</b>
+        </text>
+      </box>
+      <Show when={!collapsed()}>
+        <Switch>
+          <Match when={state().status === "error" && !state().data}>
+            <text fg={theme().warning}>{state().message}</text>
+          </Match>
+          <Match when={state().status === "loading" && !state().data}>
+            <text fg={theme().textMuted}>Loading Codex usage...</text>
+          </Match>
+          <Match when={snapshots().length === 0}>
+            <text fg={theme().textMuted}>No Codex usage data available.</text>
+          </Match>
+          <Match when={snapshots().length > 0}>
+            <For each={snapshots()}>{(snapshot) => <SnapshotView snapshot={snapshot} theme={theme} />}</For>
+          </Match>
+        </Switch>
+        <Show when={state().status === "error" && state().data}>
+          <text fg={theme().warning}>refresh failed: {state().message}</text>
+        </Show>
       </Show>
     </box>
   )
