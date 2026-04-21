@@ -15,6 +15,18 @@ It reads Codex quota data from `codex app-server` using the same `account/rateLi
 - Extra model-specific buckets when Codex exposes them, for example `GPT-5.3-Codex-Spark`.
 - The current remaining percentage and reset time for each available window.
 
+## Requirements
+
+- OpenCode TUI.
+- The `codex` CLI installed and available on your `PATH`, unless you set `codexBinary` to a custom path.
+- A working Codex login so `codex app-server` can read your rate limits.
+
+## When it appears
+
+- The plugin adds a `Codex Usage` section to the right sidebar.
+- It is most useful during Codex or OpenAI-backed sessions, where it starts expanded automatically.
+- In other sessions it stays available in the sidebar, but starts collapsed.
+
 ## Installation
 
 Install it like any other OpenCode plugin:
@@ -34,9 +46,13 @@ If you want to configure it in your workspace-local TUI config, add this to `.op
 
 Restart OpenCode after updating the config.
 
+Open a Codex-backed session and look for `Codex Usage` in the right sidebar.
+
 ## Manual Installation
 
-For a local checkout, install dependencies in this repository:
+Use this only if you want to run a local checkout of the plugin, for example while testing unreleased changes.
+
+Install dependencies in this repository:
 
 ```bash
 cd opencode-plugin-codex-usage
@@ -56,7 +72,20 @@ Restart OpenCode after updating the config.
 
 ## Configuration
 
-The plugin accepts these options in `tui.json`:
+The plugin accepts these options in `tui.json`.
+
+If you installed the published plugin, configure it like this:
+
+```json
+{
+  "plugin": [["opencode-plugin-codex-usage", {
+    "refreshMs": 30000,
+    "codexBinary": "codex"
+  }]]
+}
+```
+
+If you are using a local checkout, use the same options with your `file:///absolute/path/...` plugin entry:
 
 ```json
 {
@@ -78,11 +107,25 @@ Options:
   Command or absolute path used to launch Codex.
   Default: `codex`
 
-The current local test configuration in this workspace uses `refreshMs: 30000`.
+If `codex` is not on your `PATH`, set `codexBinary` to the full path of the executable.
+
+## Troubleshooting
+
+- `codex CLI not found`
+  Install the Codex CLI, or set `codexBinary` to its absolute path.
+
+- `No Codex usage data available`
+  Make sure Codex is logged in and able to return rate-limit data from `codex app-server`.
+
+- The plugin appears, but stays collapsed
+  That is expected in non-Codex sessions. Open a Codex or OpenAI-backed session to see it expand automatically.
+
+- The sidebar does not update immediately
+  The default refresh interval is `30000ms`. The plugin also refreshes when the session becomes idle.
 
 ## Local Verification
 
-Run the import smoke test:
+For a local checkout, run the import smoke test:
 
 ```bash
 cd opencode-plugin-codex-usage
