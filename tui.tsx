@@ -59,12 +59,18 @@ const MIN_REFRESH_MS = 15000
 const DEFAULT_REFRESH_MS = 30000
 
 function errorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error)
+
+  if (/token_invalidated|invalidated|unauthorized|\b401\b/i.test(message)) {
+    return "Codex login expired. Run `codex login` and restart OpenCode."
+  }
+
   if (error instanceof Error) {
     if (error.message.includes("ENOENT")) return "codex CLI not found"
     return error.message
   }
 
-  return String(error)
+  return message
 }
 
 function getRefreshMs(options: PluginOptions | undefined) {

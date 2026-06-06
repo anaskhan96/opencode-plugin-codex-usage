@@ -118,6 +118,9 @@ If `codex` is not on your `PATH`, set `codexBinary` to the full path of the exec
 - `No Codex usage data available`
   Make sure Codex is logged in and able to return rate-limit data from `codex app-server`.
 
+- `Codex login expired`
+  Run `codex login`, then restart OpenCode. This means the Codex CLI's cached ChatGPT authentication token was invalidated or expired.
+
 - The plugin appears, but stays collapsed
   That is expected in non-Codex sessions. Open a Codex or OpenAI-backed session to see it expand automatically.
 
