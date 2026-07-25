@@ -5,6 +5,7 @@ import { createEffect, createSignal, For, Match, onCleanup, Show, Switch } from 
 
 type PluginOptions = {
   codexBinary?: string
+  codexHome?: string
   refreshMs?: number
 }
 
@@ -165,10 +166,11 @@ function normalizeSnapshots(result: RateLimitResponse) {
   return result.rateLimits ? [result.rateLimits] : []
 }
 
-async function fetchRateLimits(codexBinary: string) {
+async function fetchRateLimits(codexBinary: string, codexHome?: string) {
   return new Promise<RateLimitData>((resolve, reject) => {
     const child = spawn(codexBinary, ["app-server", "--listen", "stdio://"], {
       stdio: ["pipe", "pipe", "pipe"],
+      ...(codexHome ? { env: { ...process.env, CODEX_HOME: codexHome } } : {}),
     })
 
     let stdout = ""
@@ -308,6 +310,7 @@ function View(props: { api: Parameters<TuiPlugin>[0]; options: PluginOptions | u
   const [collapsed, setCollapsed] = createSignal(!sessionUsesCodex(props.api, props.sessionID))
   const theme = () => props.api.theme.current
   const codexBinary = props.options?.codexBinary || "codex"
+  const codexHome = props.options?.codexHome || undefined
   const refreshMs = getRefreshMs(props.options)
   const toggleCollapsed = () => setCollapsed((value) => !value)
 
@@ -323,7 +326,7 @@ function View(props: { api: Parameters<TuiPlugin>[0]; options: PluginOptions | u
 
     running = true
     try {
-      const data = await fetchRateLimits(codexBinary)
+      const data = await fetchRateLimits(codexBinary, codexHome)
       if (!disposed) setState({ status: "ready", data })
     } catch (error) {
       if (!disposed) {
