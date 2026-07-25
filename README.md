@@ -81,7 +81,8 @@ If you installed the published plugin, configure it like this:
 {
   "plugin": [["opencode-plugin-codex-usage", {
     "refreshMs": 30000,
-    "codexBinary": "codex"
+    "codexBinary": "codex",
+    "codexHome": "/path/to/codex-home"
   }]]
 }
 ```
@@ -92,7 +93,8 @@ If you are using a local checkout, use the same options with your `file:///absol
 {
   "plugin": [["file:///absolute/path/to/opencode-plugin-codex-usage", {
     "refreshMs": 30000,
-    "codexBinary": "codex"
+    "codexBinary": "codex",
+    "codexHome": "/path/to/codex-home"
   }]]
 }
 ```
@@ -108,7 +110,15 @@ Options:
   Command or absolute path used to launch Codex.
   Default: `codex`
 
+- `codexHome`
+  Directory used as `CODEX_HOME` when launching Codex.
+  Default: unset
+
 If `codex` is not on your `PATH`, set `codexBinary` to the full path of the executable.
+
+If `codexHome` is set to a non-empty value, it overrides any `CODEX_HOME` inherited from the
+OpenCode process. If it is omitted or empty, the inherited environment is left unchanged, allowing
+Codex to use an existing `CODEX_HOME` or its normal `~/.codex` fallback.
 
 ## Troubleshooting
 
