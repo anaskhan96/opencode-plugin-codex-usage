@@ -283,6 +283,13 @@ function SnapshotView(props: {
   const isPrimaryBucket = () => (props.snapshot.limitId || "codex").toLowerCase() === "codex"
   const heading = () => (isPrimaryBucket() ? "Overall limit left" : `${snapshotName(props.snapshot)} limit left`)
 
+  const creditsText = () => {
+    const c = props.snapshot.credits
+    if (!c) return null
+    if (c.unlimited) return "Unlimited"
+    return c.balance ?? null
+  }
+
   return (
     <box flexDirection="column" gap={0} marginTop={isPrimaryBucket() ? 0 : 1}>
       <text fg={props.theme().textMuted}>{heading()}:</text>
@@ -301,6 +308,12 @@ function SnapshotView(props: {
           )
         }}
       </For>
+      <Show when={creditsText()}>
+        <box flexDirection="row" gap={0}>
+          <text fg={props.theme().textMuted}>Credits available:</text>
+          <text fg={props.theme().text}> {creditsText()}</text>
+        </box>
+      </Show>
     </box>
   )
 }
